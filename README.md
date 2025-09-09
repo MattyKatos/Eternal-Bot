@@ -68,9 +68,6 @@ A Discord bot for FFXIV Free Company management that scrapes member data from th
 
 5. **Deploy slash commands**:
    ```bash
-   # Add CLIENT_ID to your .env file first
-   CLIENT_ID=your_bot_application_id_here
-   
    node scripts/deploy-commands.js
    ```
 
@@ -80,75 +77,6 @@ A Discord bot for FFXIV Free Company management that scrapes member data from th
    # or for development with auto-restart:
    npm run dev
    ```
-
-## Project Structure
-
-```
-eternal-bot/
-├── bot/
-│   └── bot.js              # Main bot client and command handler
-├── commands/
-│   ├── ebscrape.js         # Admin: Scrape FC members
-│   ├── ebmembers.js        # List FC members
-│   ├── ebnote.js           # Admin: Add member notes
-│   ├── eblink.js           # Link Discord to FC character
-│   ├── ebunlink.js         # Unlink Discord from FC character
-│   ├── eblinkadmin.js      # Admin: Link any user to character
-│   ├── ebunlinkadmin.js    # Admin: Unlink any user
-│   ├── eblinks.js          # Admin: View all links
-│   ├── ebwhoami.js         # Show your linked character
-│   └── ebpermissions.js    # Admin: Manage user permissions
-├── config/
-│   └── config.js           # Configuration management
-├── database/
-│   └── database.js         # SQLite database operations
-├── scrapers/
-│   └── lodestone.js        # Lodestone web scraper
-├── scripts/
-│   └── deploy-commands.js  # Deploy slash commands
-├── utils/
-│   └── logger.js           # Winston logging configuration
-├── .env.example            # Environment variables template
-├── package.json            # Dependencies and scripts
-└── index.js                # Application entry point
-```
-
-## Database Schema
-
-The bot uses SQLite with the following schema:
-
-Core tables (simplified):
-
-```sql
-CREATE TABLE fc_members (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  username TEXT NOT NULL UNIQUE,
-  discord_id TEXT UNIQUE,
-  detected_date_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-  user_level TEXT DEFAULT 'user',
-  user_rank TEXT,
-  user_note TEXT,
-  points INTEGER DEFAULT 0,
-  last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE point_log (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  discord_id TEXT NOT NULL,
-  claimed_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE gamba (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  type TEXT NOT NULL,
-  user TEXT NOT NULL,
-  challenger TEXT,
-  bet INTEGER NOT NULL,
-  turn TEXT,
-  status INTEGER,
-  winner TEXT
-);
-```
 
 ## Usage
 
@@ -171,41 +99,9 @@ CREATE TABLE gamba (
 - **General Commands**: All server members can use `/eb` and `/ebdeathroll`
 - **Self-Service**: Users can unlink their own characters. Linking is admin-only.
 
-## Logging
-
-Logs are stored in the `logs/` directory:
-- `error.log` - Error messages only
-- `combined.log` - All log messages
-- Console output with colored formatting
-
-## Adding New Commands
-
-1. Create a new file in `commands/` directory
-2. Follow the existing command structure:
-   ```javascript
-   const { SlashCommandBuilder } = require('discord.js');
-   
-   module.exports = {
-     data: new SlashCommandBuilder()
-       .setName('commandname')
-       .setDescription('Command description'),
-     adminOnly: false, // Set to true for admin-only commands
-     async execute(interaction) {
-       // Command logic here
-     }
-   };
-   ```
-3. Restart the bot to load the new command
-4. Run `node scripts/deploy-commands.js` to register with Discord
-   - The deploy script fully replaces registered commands with those in `commands/`
-
 ## Troubleshooting
 
 - **Commands not appearing**: Run the deploy script and wait a few minutes
 - **Permission errors**: Verify `GMDISCID` matches your Discord user ID exactly
 - **Scraping issues**: Check if Lodestone structure has changed or if rate limiting is occurring
 - **Database errors**: Ensure the `data/` directory is writable
-
-## Contributing
-
-This bot is designed to be extensible. Feel free to add new commands, improve the scraper, or enhance the database schema for your FC's needs.
