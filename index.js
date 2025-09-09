@@ -3,6 +3,17 @@ const database = require('./database/database');
 const logger = require('./utils/logger');
 const fs = require('fs');
 
+// Polyfill web APIs for Node.js 18 environments where File/FormData may be missing
+try {
+  const { fetch, File, Blob, FormData } = require('undici');
+  if (typeof globalThis.fetch === 'undefined') globalThis.fetch = fetch;
+  if (typeof globalThis.File === 'undefined') globalThis.File = File;
+  if (typeof globalThis.Blob === 'undefined') globalThis.Blob = Blob;
+  if (typeof globalThis.FormData === 'undefined') globalThis.FormData = FormData;
+} catch (e) {
+  // If undici isn't available for some reason, continue; discord.js bundles undici but this is a safety net
+}
+
 // Ensure logs directory exists
 if (!fs.existsSync('logs')) {
   fs.mkdirSync('logs', { recursive: true });
