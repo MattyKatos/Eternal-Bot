@@ -1,30 +1,33 @@
 # Eternal Bot
 
-A Discord bot for FFXIV Free Company management that scrapes member data from the Lodestone and provides administrative tools.
+A Discord bot for FFXIV Free Company management that scrapes member data from the Lodestone, provides an admin dashboard, user self-service profile, daily Firebrands claims, and a Deathroll mini-game.
 
 ## Features
 
 - **Lodestone Scraping**: Automatically scrape FC member data from FFXIV Lodestone
-- **SQLite Database**: Store member information including usernames, levels, ranks, and notes
-- **Admin Commands**: Restricted commands for FC management
+- **SQLite Database**: Store member information including usernames, levels, ranks, notes, and Firebrands
+- **Admin Dashboard**: `/ebadmin` dashboard with member listing, edit controls, and pagination
 - **Member Tracking**: Track member changes and add administrative notes
+- **User Profile**: `/eb` shows your linked FC profile and lets you claim Daily Firebrands or unlink
+- **Daily Firebrands**: Users can claim 100 Firebrands once per day
+- **Deathroll Game**: `/ebdeathroll` lets members wager Firebrands in a public, button-driven game
 - **Scalable Architecture**: Built to support additional commands and features
 
 ## Commands
 
-### Admin Commands (GMDISCID or database admin users)
-- `/ebscrape` - Scrape FC members from Lodestone and update database
-- `/ebnote <username> [note]` - Add or update notes for FC members
-- `/eblinkadmin <user> <username>` - Link any Discord user to an FC character
-- `/ebunlinkadmin [user] [username]` - Unlink Discord user from FC character
-- `/eblinks [filter] [page]` - Show Discord-FC character links with filtering
-- `/ebpermissions <username> <level>` - Set user permission level (user/admin)
+### Admin
+- `/ebadmin` — Admin dashboard with:
+  - Scrape Now
+  - Members list pagination and formatting
+  - Edit Member dialog with actions: Link/Unlink Discord, Make/Remove Admin, Edit Note, Give/Remove Firebrands
 
-### General Commands
-- `/ebmembers [page]` - List FC members from database with pagination
-- `/eblink <username>` - Link your Discord account to your FC character
-- `/ebunlink` - Unlink your Discord account from your FC character
-- `/ebwhoami` - Show your linked FC character information
+### General
+- `/eb` — View your Eternal Bot profile (Rank, Level, Discord, Firebrands, Added)
+  - Buttons: Unlink Discord, Daily Firebrands (claim once per 24 hours)
+- `/ebdeathroll <bet>` — Create a Deathroll wager for the specified Firebrands amount
+  - Public message with Accept/Cancel
+  - After acceptance, game proceeds with a 🎲 Roll button and alternates turns
+  - Rolling 0 loses and the other player wins (winner receives 2× bet)
 
 ## Setup
 
@@ -114,6 +117,8 @@ eternal-bot/
 
 The bot uses SQLite with the following schema:
 
+Core tables (simplified):
+
 ```sql
 CREATE TABLE fc_members (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -123,31 +128,48 @@ CREATE TABLE fc_members (
   user_level TEXT DEFAULT 'user',
   user_rank TEXT,
   user_note TEXT,
+  points INTEGER DEFAULT 0,
   last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE point_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  discord_id TEXT NOT NULL,
+  claimed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE gamba (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL,
+  user TEXT NOT NULL,
+  challenger TEXT,
+  bet INTEGER NOT NULL,
+  turn TEXT,
+  status INTEGER,
+  winner TEXT
 );
 ```
 
 ## Usage
 
-1. **Initial Setup**: Run `/ebscrape` to populate the database with current FC members
-2. **View Members**: Use `/ebmembers` to see paginated member lists (👑 indicates admin users)
-3. **Link Characters**: Users can link themselves with `/eblink <username>`
-4. **Manage Permissions**: Use `/ebpermissions <username> <level>` to grant admin access
-5. **Add Notes**: Use `/ebnote <username> <note>` to add administrative notes
-6. **Regular Updates**: Run `/ebscrape` periodically to keep member data current
+1. **Admin Dashboard**: Use `/ebadmin` for scraping, viewing members, and editing profiles.
+2. **User Profile**: Users run `/eb` to see their profile and claim Daily Firebrands.
+   - If unlinked, users are prompted to ping `<@&1313525202239619103>` to get linked.
+3. **Deathroll**: Start a game with `/ebdeathroll <bet>`, accept with the button, and take turns rolling.
+4. **Regular Sync**: The sync service runs automatically every 30 minutes and can be triggered from `/ebadmin`.
 
 ## Permission System
 
-- **Global Admin**: User specified in `GMDISCID` has full access to all commands
-- **Database Admins**: FC members with `user_level` set to 'admin' can use admin commands
-- **Regular Users**: Default permission level, can use general commands only
-- **Permission Management**: Use `/ebpermissions` to promote users to admin or demote to user
+- **Global Admin**: User specified in `GMDISCID` has full access to admin dashboard actions
+- **Database Admins**: FC members with `user_level = 'admin'` can use admin dashboard actions
+- **Regular Users**: Can use `/eb` and `/ebdeathroll`
+- **Self-Service**: Users can unlink themselves; only admins can link users
 
 ## Permissions
 
-- **Admin Commands**: Global admin (`GMDISCID`) and database admins (`user_level: 'admin'`) can use admin commands
-- **General Commands**: All server members can use general commands like `/ebmembers`
-- **Self-Service**: Users can link/unlink their own characters without admin intervention
+- **Admin Actions**: Global admin (`GMDISCID`) and database admins (`user_level: 'admin'`) can use admin actions in `/ebadmin`
+- **General Commands**: All server members can use `/eb` and `/ebdeathroll`
+- **Self-Service**: Users can unlink their own characters. Linking is admin-only.
 
 ## Logging
 
@@ -175,6 +197,7 @@ Logs are stored in the `logs/` directory:
    ```
 3. Restart the bot to load the new command
 4. Run `node scripts/deploy-commands.js` to register with Discord
+   - The deploy script fully replaces registered commands with those in `commands/`
 
 ## Troubleshooting
 
