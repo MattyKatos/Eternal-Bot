@@ -9,6 +9,37 @@ class Database {
     this.init();
   }
 
+  // Leaderboards
+  getTopByPoints(limit = 5) {
+    return new Promise((resolve, reject) => {
+      const query = `
+        SELECT username, discord_id, COALESCE(points, 0) AS points
+        FROM fc_members
+        ORDER BY points DESC, username ASC
+        LIMIT ?`;
+      this.db.all(query, [limit], (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows || []);
+      });
+    });
+  }
+
+  getTopWins(limit = 5) {
+    return new Promise((resolve, reject) => {
+      const query = `
+        SELECT winner AS discord_id, COUNT(*) AS wins
+        FROM gamba
+        WHERE winner IS NOT NULL AND type = 'deathroll'
+        GROUP BY winner
+        ORDER BY wins DESC
+        LIMIT ?`;
+      this.db.all(query, [limit], (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows || []);
+      });
+    });
+  }
+
   // Gamba helpers
   createGamba(type, userDiscordId, bet) {
     return new Promise((resolve, reject) => {
