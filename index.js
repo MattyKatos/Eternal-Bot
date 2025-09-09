@@ -1,3 +1,15 @@
+// Minimal shim to avoid ReferenceError: File is not defined when undici initializes
+if (typeof globalThis.File === 'undefined') {
+  globalThis.File = class File {
+    constructor(parts, name, options = {}) {
+      this.name = name || 'unknown';
+      this.type = options.type || '';
+      this.size = Array.isArray(parts) ? parts.reduce((n, p) => n + (p?.length || 0), 0) : 0;
+      this.lastModified = options.lastModified || Date.now();
+    }
+  };
+}
+
 const EternalBot = require('./bot/bot');
 const database = require('./database/database');
 const logger = require('./utils/logger');
