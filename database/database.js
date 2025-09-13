@@ -89,7 +89,12 @@ class Database {
 
   canClaimPoints(discordId) {
     return new Promise((resolve, reject) => {
-      const query = `SELECT 1 as found FROM point_log WHERE discord_id = ? AND claimed_at >= datetime('now','-24 hours') LIMIT 1`;
+      const query = `
+        SELECT 1 as found
+        FROM point_log
+        WHERE discord_id = ?
+          AND date(claimed_at, 'localtime') = date('now','localtime')
+        LIMIT 1`;
       this.db.get(query, [discordId], (err, row) => {
         if (err) return reject(err);
         resolve(!row);
