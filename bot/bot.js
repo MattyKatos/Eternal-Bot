@@ -420,12 +420,23 @@ class EternalBot {
                 await interaction.reply({ content: 'Cannot cancel after a challenger has accepted.', ephemeral: true });
                 return;
               }
+              // Refund creator; do NOT mark a winner on cancel
               const creatorMember = await database.getMemberByDiscordId(game.user);
               if (creatorMember) await database.addPoints(creatorMember.username, game.bet);
-              await database.updateGamba(gambaId, { winner: game.user });
-              game.winner = game.user;
-              const payload = await renderGame();
-              await interaction.update(payload);
+              // Update message to reflect cancellation
+              const userMention = game.user ? `<@${game.user}>` : 'Unknown';
+              const embed = {
+                title: '💀 Deathroll',
+                color: 0x8E44AD,
+                description: `A deathroll issued by ${userMention} has been cancelled.`,
+                fields: [
+                  { name: 'Wager', value: `${game.bet} Firebrands`, inline: true },
+                  { name: 'User', value: userMention, inline: true },
+                  { name: 'Status', value: 'Cancelled by creator', inline: false },
+                ],
+                timestamp: new Date().toISOString(),
+              };
+              await interaction.update({ embeds: [embed], components: [] });
               return;
             }
 
