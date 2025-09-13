@@ -129,7 +129,7 @@ class EternalBot {
               return;
             }
 
-            await database.addPoints(username, 100);
+            await database.addPoints(username, 1000);
             await database.recordClaim(interaction.user.id);
 
             // Refresh the embed similar to /eb output (no note)
@@ -163,14 +163,14 @@ class EternalBot {
                 {
                   type: 2,
                   custom_id: `ebself_claim:${visibilityTag}:${encodedUser}`,
-                  label: 'Claim 100 Firebrands',
+                  label: 'Daily Firebrands',
                   style: 1,
                   disabled: true,
                 },
               ],
             };
 
-            await interaction.update({ content: '🎉 You claimed 100 Firebrands!', embeds: [embed], components: [row] });
+            await interaction.update({ content: '🎉 You claimed your Daily Firebrands (1000)!', embeds: [embed], components: [row] });
             return;
           }
 
